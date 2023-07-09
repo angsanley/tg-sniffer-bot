@@ -73,7 +73,11 @@ bot.on('message', async (ctx) => {
   // delete message
   const message = ctx.message.text.toLowerCase()
 
-  if (bannedWords.some(word => message.includes(word))) {
+  // only match words
+  const words = message.split(' ')
+  const matchedWords = words.filter((word) => bannedWords.includes(word))
+
+  if (matchedWords.length > 0) {
     try {
       await ctx.deleteMessage()
     } catch (err) {
