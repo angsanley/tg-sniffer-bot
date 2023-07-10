@@ -62,8 +62,23 @@ const checkPermissionsAndSendMessage = async (ctx: Context): Promise<ReturnType<
   return error
 }
 
+const removeMessage = async (ctx: Context): Promise<void> => {
+  // forward the message to the admin
+  const adminChatId = process.env.ADMIN_CHAT_ID
+  if (adminChatId !== undefined) {
+    const fromUsername = ctx.from?.username ?? ctx.from?.first_name ?? 'Unknown'
+    await bot.api.sendMessage(adminChatId, `Message from ${fromUsername} automatically deleted:`)
+    await ctx.forwardMessage(adminChatId)
+  }
+
+  await ctx.deleteMessage()
+}
+
 // Reply to any message with "Hi there!".
 bot.on('message', async (ctx) => {
+  // if admin chat id (the chat, not the person in a group), ignore
+  if (ctx.chat.id.toString() === process.env.ADMIN_CHAT_ID) return
+
   const error = await checkPermissionsAndSendMessage(ctx)
   if (error !== false) return
 
@@ -79,7 +94,7 @@ bot.on('message', async (ctx) => {
 
   if (matchedWords.length > 0) {
     try {
-      await ctx.deleteMessage()
+      await removeMessage(ctx)
     } catch (err) {
       const grammyError = err as GrammyError
       if (grammyError.error_code === 400) {
